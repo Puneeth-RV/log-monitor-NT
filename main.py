@@ -13,6 +13,7 @@ import store
 from filters import filter_logs
 from alert_engine import run_alerts
 from chart_engine import get_chart_data
+from risk_engine import get_risk_scores
 
 # --- App setup ---
 app = FastAPI(title="Log Monitor")
@@ -78,6 +79,12 @@ def get_chart(
         to_time=to_time if to_time else None,
         keyword=keyword if keyword else None,
     )
+
+
+# GET /risk — per-service risk scores
+@app.get("/risk")
+def get_risk():
+    return get_risk_scores()
 
 
 # GET /export — same filters as /logs but returns a CSV file download
