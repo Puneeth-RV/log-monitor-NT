@@ -2,6 +2,8 @@
 
 A real-time log monitoring dashboard built with FastAPI, Pandas, and Chart.js. Ingests application logs, provides search and filtering, detects abnormal patterns using intelligent alert rules, and displays everything in a live-updating dashboard.
 
+![LogLens Dashboard](static/screenshot.png)
+
 ## How to Run
 
 ```bash
