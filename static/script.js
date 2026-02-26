@@ -5,6 +5,37 @@
 // ── Chart Instance ─────────────────────────────────────
 let chartInstance = null;
 
+// ── Theme Toggle ───────────────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const label = document.getElementById('themeLabel');
+  if (html.getAttribute('data-theme') === 'light') {
+    html.removeAttribute('data-theme');
+    label.textContent = 'Light';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    label.textContent = 'Dark';
+  }
+  // Re-render chart with new theme colors
+  fetchChart();
+}
+
+function getThemeChartColors() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  return {
+    grid: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(30, 45, 69, 0.5)',
+    tick: isLight ? '#8892a4' : '#4a5a74',
+    tooltipBg: isLight ? '#ffffff' : '#1a2234',
+    tooltipTitle: isLight ? '#1a1f2e' : '#e8edf5',
+    tooltipBody: isLight ? '#5a6478' : '#7a8ba8',
+    tooltipBorder: isLight ? '#e0e4ea' : '#1e2d45',
+    pointBorder: isLight ? '#ffffff' : '#1a2234',
+    line: isLight ? '#dc2626' : '#f87171',
+    gradientTop: isLight ? 'rgba(220, 38, 38, 0.2)' : 'rgba(248, 113, 113, 0.3)',
+    gradientBottom: isLight ? 'rgba(220, 38, 38, 0.0)' : 'rgba(248, 113, 113, 0.0)',
+  };
+}
+
 // ── Clock ──────────────────────────────────────────────
 function updateClock() {
   const now = new Date();
@@ -183,11 +214,12 @@ function renderChart(data) {
 
   const labels = data.map(d => d.time);
   const counts = data.map(d => d.count);
+  const theme = getThemeChartColors();
 
   // Gradient fill
   const gradient = ctx.createLinearGradient(0, 0, 0, 280);
-  gradient.addColorStop(0, 'rgba(248, 113, 113, 0.3)');
-  gradient.addColorStop(1, 'rgba(248, 113, 113, 0.0)');
+  gradient.addColorStop(0, theme.gradientTop);
+  gradient.addColorStop(1, theme.gradientBottom);
 
   chartInstance = new Chart(ctx, {
     type: 'line',
@@ -196,11 +228,11 @@ function renderChart(data) {
       datasets: [{
         label: 'Errors',
         data: counts,
-        borderColor: '#f87171',
+        borderColor: theme.line,
         backgroundColor: gradient,
         borderWidth: 2.5,
-        pointBackgroundColor: '#f87171',
-        pointBorderColor: '#1a2234',
+        pointBackgroundColor: theme.line,
+        pointBorderColor: theme.pointBorder,
         pointBorderWidth: 2,
         pointRadius: 3,
         pointHoverRadius: 6,
@@ -218,10 +250,10 @@ function renderChart(data) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a2234',
-          titleColor: '#e8edf5',
-          bodyColor: '#7a8ba8',
-          borderColor: '#1e2d45',
+          backgroundColor: theme.tooltipBg,
+          titleColor: theme.tooltipTitle,
+          bodyColor: theme.tooltipBody,
+          borderColor: theme.tooltipBorder,
           borderWidth: 1,
           padding: 12,
           cornerRadius: 8,
@@ -235,9 +267,9 @@ function renderChart(data) {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(30, 45, 69, 0.5)', drawBorder: false },
+          grid: { color: theme.grid, drawBorder: false },
           ticks: {
-            color: '#4a5a74',
+            color: theme.tick,
             font: { family: 'JetBrains Mono', size: 11 },
             maxRotation: 0,
             maxTicksLimit: 15
@@ -245,9 +277,9 @@ function renderChart(data) {
         },
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(30, 45, 69, 0.5)', drawBorder: false },
+          grid: { color: theme.grid, drawBorder: false },
           ticks: {
-            color: '#4a5a74',
+            color: theme.tick,
             font: { family: 'JetBrains Mono', size: 11 },
             stepSize: 5
           }
