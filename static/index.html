@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogPulse — Monitoring Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- Loading bar -->
+<div class="loading-bar" id="loadingBar" style="width: 0%;"></div>
+
+<!-- ═══════════════════════════════════════════ HEADER ═══ -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon">LP</div>
+    <div class="logo-text">LogPulse</div>
+  </div>
+  <div class="header-right">
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      LIVE
+    </div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════ MAIN ═════ -->
+<main class="main">
+
+  <!-- ─── Stats Row ────────────────────────────────────── -->
+  <section class="stats-row">
+    <div class="stat-card animate-in">
+      <div class="stat-label">Total Logs</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Errors</div>
+      <div class="stat-value" id="statErrors">—</div>
+    </div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Warnings</div>
+      <div class="stat-value" id="statWarnings">—</div>
+    </div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Active Alerts</div>
+      <div class="stat-value" id="statAlerts">—</div>
+    </div>
+  </section>
+
+  <!-- ─── Filter Bar ──────────────────────────────────── -->
+  <section class="filter-bar">
+    <div class="filter-group">
+      <label>Level</label>
+      <select id="filterLevel">
+        <option value="ALL">ALL</option>
+        <option value="ERROR">ERROR</option>
+        <option value="WARN">WARN</option>
+        <option value="INFO">INFO</option>
+        <option value="DEBUG">DEBUG</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Service</label>
+      <select id="filterService">
+        <option value="ALL">ALL</option>
+        <option value="MeshDataService">MeshDataService</option>
+        <option value="MeshDataController">MeshDataController</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>From</label>
+      <input type="datetime-local" id="filterFrom">
+    </div>
+    <div class="filter-group">
+      <label>To</label>
+      <input type="datetime-local" id="filterTo">
+    </div>
+    <div class="filter-group">
+      <label>Keyword</label>
+      <input type="text" id="filterKeyword" placeholder="Search messages…">
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-primary" onclick="fetchLogs()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+      <button class="btn btn-secondary" onclick="exportCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── Chart + Alerts Grid ──────────────────────────── -->
+  <section class="dashboard-grid">
+
+    <!-- Chart Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background: var(--accent-red);"></div>
+          Errors Over Time
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-container">
+          <canvas id="errorChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background: var(--accent-yellow);"></div>
+          Active Alerts
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">auto-refresh 10s</div>
+      </div>
+      <div class="panel-body">
+        <div class="alerts-list" id="alertsContainer">
+          <div class="no-alerts">
+            <div class="no-alerts-icon">✓</div>
+            <div class="no-alerts-text">No active alerts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ─── Risk Scores ─────────────────────────────────── -->
+  <section class="panel" style="margin-bottom: 24px;">
+    <div class="panel-header">
+      <div class="panel-title">
+        <div class="dot" style="background: var(--accent-orange);"></div>
+        Service Risk Scores
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">auto-refresh</div>
+    </div>
+    <div class="panel-body">
+      <div class="risk-grid" id="riskContainer"></div>
+    </div>
+  </section>
+
+  <!-- ─── Logs Table ──────────────────────────────────── -->
+  <section class="panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <div class="dot" style="background: var(--accent-blue);"></div>
+        Log Stream
+      </div>
+    </div>
+    <div class="table-info">
+      <div>Showing <span id="logCount">0</span> entries</div>
+      <div id="logRange"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Level</th>
+            <th>Service</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="logsTableBody">
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- Load dashboard logic -->
+<script src="/static/script.js"></script>
+
+</body>
+</html>
