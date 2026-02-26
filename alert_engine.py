@@ -8,7 +8,7 @@ def run_alerts():
     """Run all alert rules against the last 10 minutes of log data."""
     
     # Get current time and calculate the 10-minute window start
-    now = datetime.now()
+    now = DF["timestamp"].max()
     window_start = now - timedelta(minutes=10)
     
     # Filter DataFrame to only include rows within the last 10 minutes
