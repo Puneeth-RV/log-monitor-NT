@@ -9,7 +9,7 @@ import io
 import csv
 
 # --- Import project modules ---
-from store import DF, reload_logs
+import store
 from filters import filter_logs
 from alert_engine import run_alerts
 from chart_engine import get_chart_data
@@ -62,10 +62,22 @@ def get_alerts():
     return run_alerts()
 
 
-# GET /chart — error counts grouped by minute for the chart
+# GET /chart — error counts grouped by minute for the chart (supports filters)
 @app.get("/chart")
-def get_chart():
-    return get_chart_data()
+def get_chart(
+    level: str = Query(None),
+    service: str = Query(None),
+    from_time: str = Query(None),
+    to_time: str = Query(None),
+    keyword: str = Query(None),
+):
+    return get_chart_data(
+        level=level if level and level != "ALL" else None,
+        service=service if service and service != "ALL" else None,
+        from_time=from_time if from_time else None,
+        to_time=to_time if to_time else None,
+        keyword=keyword if keyword else None,
+    )
 
 
 # GET /export — same filters as /logs but returns a CSV file download
@@ -102,9 +114,9 @@ def export_csv(
     )
 
 
-# --- Background scheduler: reload logs every 10 seconds ---
+# --- Background scheduler: reload logs every 2 seconds for real-time simulation ---
 scheduler = BackgroundScheduler()
-scheduler.add_job(reload_logs, "interval", seconds=10)
+scheduler.add_job(store.reload_logs, "interval", seconds=2)
 scheduler.start()
 
 
