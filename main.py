@@ -16,7 +16,7 @@ from chart_engine import get_chart_data
 from risk_engine import get_risk_scores
 
 # --- App setup ---
-app = FastAPI(title="Log Monitor")
+app = FastAPI(title="LogLens")
 
 # CORS — allow all origins so the frontend can call the API
 app.add_middleware(
